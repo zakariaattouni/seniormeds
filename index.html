@@ -4,13 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
 <title>ذكرني - أدوية ومواعيد صحتي</title>
-
 <!-- أيقونات PWA للتطبيق على الشاشة الرئيسية (أيقونة SVG مدمجة عالية الجودة تعبر عن التطبيق) -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%232c7da0'/%3E%3Cstop offset='100%25' stop-color='%231a4b63'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Cpath fill='white' d='M50 20 L30 55 L40 55 L35 80 L50 60 L65 80 L60 55 L70 55 Z'/%3E%3Ccircle cx='50' cy='42' r='7' fill='white'/%3E%3Ctext x='50' y='92' font-size='14' text-anchor='middle' fill='white' font-family='Arial'%3E📅%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%232c7da0'/%3E%3Cpath fill='white' d='M90 35 L50 90 L65 90 L58 135 L90 100 L122 135 L115 90 L130 90 Z'/%3E%3Ccircle cx='90' cy='68' r='12' fill='white'/%3E%3Ctext x='90' y='162' font-size='28' text-anchor='middle' fill='white'%3E💊%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="تذكيرتي">
+<meta name="apple-mobile-web-app-title" content="ذكرني">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#2c7da0">
 <meta name="background-color" content="#eef5fa">
@@ -258,7 +257,7 @@ hr {
 <body>
 <div class="container">
   <div class="dashboard">
-    <h1>🌿 تذكيرتي الصحية</h1>
+    <h1>🌿 ذكرني الصحية</h1>
     <p id="dashboardMedicines"></p>
     <p id="dashboardAppointments"></p>
     <p id="dashboardReading"></p>
@@ -319,7 +318,6 @@ hr {
     🌟 تصميم وبرمجة: الدكتور زكريا محمد عطوني 🌟
   </div>
 </div>
-
 <!-- مودال الدواء -->
 <div class="modal" id="medicineModal">
   <div class="modal-content">
@@ -333,7 +331,6 @@ hr {
     </div>
   </div>
 </div>
-
 <!-- مودال الموعد -->
 <div class="modal" id="appointmentModal">
   <div class="modal-content">
@@ -347,7 +344,6 @@ hr {
     </div>
   </div>
 </div>
-
 <script>
 // ------------------- الصوت والإشعارات -------------------
 let audioContext = null;
@@ -376,18 +372,15 @@ function playDoubleBeep() {
   setTimeout(playBeep, 350);
 }
 document.getElementById('testSoundBtn').addEventListener('click', playDoubleBeep);
-
 // ------------------- البيانات والتخزين -------------------
 let medicines = JSON.parse(localStorage.getItem('medicines')) || [];
 let appointments = JSON.parse(localStorage.getItem('appointments')) || [];
 let readings = JSON.parse(localStorage.getItem('readings')) || [];
 let familyContacts = JSON.parse(localStorage.getItem('familyContacts')) || [];
 let doctorContacts = JSON.parse(localStorage.getItem('doctorContacts')) || [];
-
 if ("Notification" in window) {
   Notification.requestPermission();
 }
-
 function saveAllToLocal() {
   localStorage.setItem('medicines', JSON.stringify(medicines));
   localStorage.setItem('appointments', JSON.stringify(appointments));
@@ -395,7 +388,6 @@ function saveAllToLocal() {
   localStorage.setItem('familyContacts', JSON.stringify(familyContacts));
   localStorage.setItem('doctorContacts', JSON.stringify(doctorContacts));
 }
-
 function showNotification(title, body, double = false) {
   if (double) playDoubleBeep();
   else playBeep();
@@ -403,7 +395,6 @@ function showNotification(title, body, double = false) {
     new Notification(title, { body: body, icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%232c7da0'/%3E%3Cpath fill='white' d='M50 25 L35 55 L45 55 L40 75 L50 60 L60 75 L55 55 L65 55 Z'/%3E%3Ccircle cx='50' cy='42' r='6' fill='white'/%3E%3C/svg%3E" });
   }
 }
-
 // ------------------- مراقبة التذكيرات -------------------
 function checkReminders() {
   const now = new Date();
@@ -432,7 +423,6 @@ function checkReminders() {
 }
 setInterval(checkReminders, 60000);
 checkReminders();
-
 // ------------------- عرض لوحة المعلومات -------------------
 function updateDashboard() {
   const remainingMeds = medicines.filter(m => !m.taken).length;
@@ -443,7 +433,6 @@ function updateDashboard() {
   const lastReading = readings[readings.length - 1];
   document.getElementById('dashboardReading').innerHTML = lastReading ? `❤️ آخر قراءة: ضغط ${lastReading.bp || '---'} | سكر ${lastReading.sugar || '---'} (${lastReading.date})` : `🩺 أضف قراءاتك الصحية`;
 }
-
 // ------------------- إدارة الأدوية -------------------
 function displayMedicines() {
   const container = document.getElementById('medicinesList');
@@ -490,7 +479,6 @@ function saveMedicine() {
   document.getElementById('medDose').value = '';
   document.getElementById('medTime').value = '08:00';
 }
-
 // ------------------- إدارة المواعيد -------------------
 function displayAppointments() {
   const container = document.getElementById('appointmentsList');
@@ -533,7 +521,6 @@ function saveAppointment() {
   document.getElementById('appTime').value = '';
 }
 function deleteAppointment(idx) { appointments.splice(idx, 1); saveAllToLocal(); displayAppointments(); updateDashboard(); }
-
 // ------------------- القراءات -------------------
 function saveReading() {
   const bp = document.getElementById('bp').value.trim();
@@ -560,7 +547,6 @@ function displayReadings() {
     <div>📆 ${r.date} | ❤️ ضغط: ${r.bp} | 🩸 سكر: ${r.sugar}</div>
   `).join('');
 }
-
 // ------------------- جهات الاتصال -------------------
 function displayContacts() {
   const familyDiv = document.getElementById('familyContactsList');
@@ -570,7 +556,7 @@ function displayContacts() {
       <div>👤 ${c.name}<br>📞 ${c.phone}</div>
       <div class="item-buttons">
         <button class="btn-share" onclick="window.open('tel:${c.phone}')">📞 اتصل</button>
-        <button class="btn-share" onclick="sendWhatsApp('${c.phone}', 'مرحباً من تطبيق تذكيرتي')">💬 واتساب</button>
+        <button class="btn-share" onclick="sendWhatsApp('${c.phone}', 'مرحباً من تطبيق ذكرني')">💬 واتساب</button>
         <button class="btn-delete" onclick="deleteContact('family', ${idx})">🗑️</button>
       </div>
     </div>
@@ -614,7 +600,7 @@ function sendWhatsApp(phone, text) {
 function generateReportText() {
   let medsText = medicines.map(m => `• ${m.name} - ${m.dose} - ${m.time}`).join('\n') || 'لا توجد أدوية';
   let readingsText = readings.slice(-5).map(r => `📆 ${r.date} | ضغط ${r.bp} | سكر ${r.sugar}`).join('\n') || 'لا توجد قراءات';
-  return `📋 *تقريري الصحي من تطبيق تذكيرتي*\n\n💊 *الأدوية:*\n${medsText}\n\n📊 *آخر القراءات:*\n${readingsText}\n\n🩺 تذكر مواعيدك الصحية.`;
+  return `📋 *تقريري الصحي من تطبيق ذكرني*\n\n💊 *الأدوية:*\n${medsText}\n\n📊 *آخر القراءات:*\n${readingsText}\n\n🩺 تذكر مواعيدك الصحية.`;
 }
 function shareReportWithFamily() {
   if (!familyContacts.length) return alert('لا يوجد أفراد عائلة مضافين');
@@ -626,7 +612,6 @@ function shareReportWithDoctor() {
   const report = generateReportText();
   sendWhatsApp(doctorContacts[0].phone, report);
 }
-
 // ------------------- نسخ احتياطي واستعادة -------------------
 function exportData() {
   const data = { medicines, appointments, readings, familyContacts, doctorContacts };
@@ -660,12 +645,11 @@ function importData(event) {
   };
   reader.readAsText(file);
 }
-
 // ------------------- إنشاء Web App Manifest ديناميكي -------------------
 (function createManifest() {
   const manifestObj = {
-    name: "تذكيرتي - أدوية ومواعيد",
-    short_name: "تذكيرتي",
+    name: "ذكرني - أدوية ومواعيد",
+    short_name: "ذكرني",
     description: "تطبيق لإدارة الأدوية والمواعيد الطبية ومشاركة القراءات مع العائلة والطبيب",
     start_url: ".",
     display: "standalone",
@@ -686,7 +670,6 @@ function importData(event) {
   document.head.appendChild(link);
   setTimeout(() => URL.revokeObjectURL(manifestURL), 60000);
 })();
-
 // ------------------- التهيئة الأولية -------------------
 displayMedicines();
 displayAppointments();
