@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تذكيرتي - أدوية ومواعيد</title>
+    <style>
+        body { font-family: 'Tahoma', sans-serif; background: #f0f7ff; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { background: #2c7da0; color: white; border: none; padding: 12px 20px; border-radius: 30px; font-size: 16px; cursor: pointer; margin: 5px; }
+        .medicine-item { background: #e9f5fa; margin: 10px 0; padding: 15px; border-radius: 15px; }
+        .reading { font-size: 24px; font-weight: bold; color: #1f5068; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h2>💊 أدويتي اليوم</h2>
+        <div id="medicinesList"></div>
+        <button onclick="addMedicine()">➕ إضافة دواء جديد</button>
+    </div>
+    
+    <div class="card">
+        <h2>📅 مواعيد طبية</h2>
+        <div id="appointmentsList"></div>
+        <button onclick="addAppointment()">➕ إضافة موعد</button>
+    </div>
+    
+    <div class="card">
+        <h2>📊 قراءاتي</h2>
+        <div>
+            <label>ضغط الدم: <input type="text" id="bp" placeholder="مثال: 120/80"></label>
+            <label>السكر: <input type="text" id="sugar" placeholder="مثال: 110"></label>
+            <button onclick="saveReading()">حفظ القراءة</button>
+        </div>
+        <div id="readingsHistory"></div>
+        <button onclick="shareReport()">📧 مشاركة التقرير مع العائلة</button>
+    </div>
+</div>
+
+<script>
+    // تحميل البيانات المخزنة محلياً
+    let medicines = JSON.parse(localStorage.getItem('medicines')) || [];
+    let appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+    let readings = JSON.parse(localStorage.getItem('readings')) || [];
+
+    // طلب إذن الإشعارات
+    if ("Notification" in window) { Notification.requestPermission(); }
+
+    function saveAll() {
+        localStorage.setItem('medicines', JSON.stringify(medicines));
+        localStorage.setItem('appointments', JSON.stringify(appointments));
+        localStorage.setItem('readings', JSON.stringify(readings));
+    }
+
+    function showNotification(title, body) {
+        if (Notification.permission === "granted") {
+            new Notification(title, { body: body, icon: "https://cdn-icons-png.flaticon.com/512/3095/3095120.png" });
+        }
+    }
+
+    function checkReminders() {
+        const now = new Date();
+        medicines.forEach(med => {
+            if (med.time && med.time === now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})) {
+                showNotification("⏰ وقت الدواء", `حان وقت تناول ${med.name}`);
+                // تشغيل صوت واضح (نبيه بسيط)
+                new Audio('data:audio/wav;base64,U3RlYWx0aCB...').play(); // يمكنك استخدام ملف صوت قصير
+            }
+        });
+    }
+
+    function displayMedicines() {
+        const container = document.getElementById('medicinesList');
+        container.innerHTML = medicines.map((med, idx) => `
+            <div class="medicine-item">
+                <strong>${med.name}</strong> - ${med.dose} 
+                الساعة: ${med.time || 'غير محدد'}
+                <button onclick="deleteMedicine(${idx})">❌ حذف</button>
+            </div>
+        `).join('');
+    }
+
+    window.addMedicine = function() {
+        let name = prompt("اسم الدواء:");
+        let dose = prompt("الجرعة (مثال: حبة واحدة):");
+        let time = prompt("وقت التذكير (مثال: 08:00):");
+        if(name) {
+            medicines.push({ name, dose, time });
+            saveAll();
+            displayMedicines();
+        }
+    }
+
+    window.deleteMedicine = function(idx) { medicines.splice(idx,1); saveAll(); displayMedicines(); }
+
+    window.addAppointment = function() {
+        let title = prompt("عنوان الموعد (مثال: عيون)");
+        let date = prompt("التاريخ (2025-05-20)");
+        if(title) { appointments.push({ title, date }); saveAll(); displayAppointments(); }
+    }
+
+    function displayAppointments() {
+        document.getElementById('appointmentsList').innerHTML = appointments.map((app, idx) => `
+            <div>📌 ${app.title} - ${app.date} <button onclick="deleteAppointment(${idx})">حذف</button></div>
+        `).join('');
+    }
+    window.deleteAppointment = function(idx) { appointments.splice(idx,1); saveAll(); displayAppointments(); }
+
+    window.saveReading = function() {
+        let bp = document.getElementById('bp').value;
+        let sugar = document.getElementById('sugar').value;
+        if(bp || sugar) {
+            readings.push({ date: new Date().toLocaleDateString(), bp, sugar });
+            saveAll();
+            displayReadings();
+            document.getElementById('bp').value = '';
+            document.getElementById('sugar').value = '';
+        }
+    }
+
+    function displayReadings() {
+        document.getElementById('readingsHistory').innerHTML = readings.slice(-5).map(r => `
+            <div>${r.date} | ضغط: ${r.bp || '--'} | سكر: ${r.sugar || '--'}</div>
+        `).join('');
+    }
+
+    window.shareReport = function() {
+        let report = "تقريري الصحي:\n" + readings.map(r => `${r.date}: ضغط ${r.bp} - سكر ${r.sugar}`).join("\n");
+        alert("يمكنك نسخ هذا التقرير وإرساله:\n" + report);
+        // في التطبيق الحقيقي يمكن استخدام Web Share API
+        if(navigator.share) navigator.share({ title: 'تقريري الصحي', text: report });
+    }
+
+    // التحديث الدقيق للتنبيهات (كل دقيقة)
+    setInterval(checkReminders, 60000);
+    displayMedicines(); displayAppointments(); displayReadings();
+</script>
+</body>
+</html><!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>تذكيرتي - أدوية ومواعيد</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #eef5fa;
+            margin: 0;
+            padding: 15px;
+        }
+        .container { max-width: 650px; margin: auto; }
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h2 {
+            font-size: 1.7rem;
+            margin-top: 0;
+            color: #1f5068;
+            border-right: 8px solid #2c7da0;
+            padding-right: 15px;
+        }
+        button, .btn-small {
+            background: #2c7da0;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 5px 4px;
+            transition: 0.2s;
+        }
+        button:hover { background: #1f5e7a; }
+        .btn-outline {
+            background: #f0f7fc;
+            color: #1f5068;
+            border: 1px solid #2c7da0;
+        }
+        .medicine-item, .contact-item, .appointment-item {
+            background: #f8fafc;
+            margin: 12px 0;
+            padding: 14px;
+            border-radius: 20px;
+            border-right: 5px solid #2c7da0;
+            font-size: 1.1rem;
+        }
+        .reading-box {
+            background: #e0f0f5;
+            padding: 12px;
+            border-radius: 20px;
+            margin-top: 15px;
+        }
+        .reading-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .reading-input input {
+            flex: 1;
+            padding: 10px;
+            font-size: 1rem;
+            border-radius: 28px;
+            border: 1px solid #ccc;
+        }
+        .flex-buttons { display: flex; flex-wrap: wrap; justify-content: space-between; }
+        hr { margin: 20px 0; }
+        .note { color: #555; font-size: 0.85rem; }
+        .sound-test { background: #5a9e6e; margin-top: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h2>💊 أدويتي اليوم</h2>
+        <div id="medicinesList"></div>
+        <button onclick="addMedicine()">➕ إضافة دواء</button>
+    </div>
+
+    <div class="card">
+        <h2>📅 مواعيد طبية</h2>
+        <div id="appointmentsList"></div>
+        <button onclick="addAppointment()">➕ إضافة موعد</button>
+    </div>
+
+    <div class="card">
+        <h2>📊 قراءاتي</h2>
+        <div class="reading-input">
+            <input type="text" id="bp" placeholder="ضغط الدم (مثال: 120/80)">
+            <input type="text" id="sugar" placeholder="السكر (مثال: 110)">
+            <button onclick="saveReading()">حفظ</button>
+        </div>
+        <div id="readingsHistory" class="reading-box"></div>
+    </div>
+
+    <div class="card">
+        <h2>⚙️ الإعدادات وجهات الاتصال</h2>
+        <div>
+            <h3>👨‍👩‍👧‍👦 أفراد العائلة</h3>
+            <div id="familyContactsList"></div>
+            <button onclick="addContact('family')">➕ إضافة فرد</button>
+        </div>
+        <hr>
+        <div>
+            <h3>👨‍⚕️ الطبيب المعالج</h3>
+            <div id="doctorContactsList"></div>
+            <button onclick="addContact('doctor')">➕ إضافة طبيب</button>
+        </div>
+        <hr>
+        <button onclick="shareReportWithFamily()" style="background:#4c9a6e;">📱 مشاركة التقرير مع العائلة</button>
+        <button onclick="shareReportWithDoctor()" style="background:#4c9a6e;">📩 مشاركة التقرير مع الطبيب</button>
+        <button id="testSoundBtn" class="sound-test">🔊 اختبار الصوت (تذكير)</button>
+        <p class="note">📌 سيتم تشغيل صوت تذكير واضح مع كل موعد دواء أو موعد طبي. جرب اختبار الصوت أعلاه.</p>
+    </div>
+</div>
+
+<script>
+    // ======================== نظام الصوتيات ========================
+    let audioContext = null;
+    
+    // دالة لتشغيل صوت "بيب" قصير وحاد (مناسب لكبار السن)
+    function playBeep() {
+        try {
+            // إنشاء AudioContext عند أول استخدام (لازم بسبب سياسة المتصفحات)
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            // استئناف السياق إذا كان معلقاً (بعد تفاعل المستخدم)
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.type = 'sine';   // صوت نقي
+            oscillator.frequency.value = 880; // نغمة عالية (A5)
+            gainNode.gain.value = 0.3;   // صوت واضح بدون إزعاج
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.8);
+            oscillator.stop(audioContext.currentTime + 0.8);
+        } catch(e) {
+            console.log("صوت غير مدعوم", e);
+        }
+    }
+    
+    // دالة ثانية لتذكير المواعيد (نغمة مزدوجة)
+    function playDoubleBeep() {
+        playBeep();
+        setTimeout(() => playBeep(), 300);
+    }
+    
+    // ربط زر اختبار الصوت
+    document.getElementById('testSoundBtn').addEventListener('click', () => {
+        playDoubleBeep();
+    });
+    
+    // ======================== البيانات والتخزين ========================
+    let medicines = JSON.parse(localStorage.getItem('medicines')) || [];
+    let appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+    let readings = JSON.parse(localStorage.getItem('readings')) || [];
+    let familyContacts = JSON.parse(localStorage.getItem('familyContacts')) || [];
+    let doctorContacts = JSON.parse(localStorage.getItem('doctorContacts')) || [];
+
+    // طلب إذن الإشعارات
+    if ("Notification" in window) { Notification.requestPermission(); }
+
+    function saveAll() {
+        localStorage.setItem('medicines', JSON.stringify(medicines));
+        localStorage.setItem('appointments', JSON.stringify(appointments));
+        localStorage.setItem('readings', JSON.stringify(readings));
+        localStorage.setItem('familyContacts', JSON.stringify(familyContacts));
+        localStorage.setItem('doctorContacts', JSON.stringify(doctorContacts));
+    }
+
+    // ======================== الإشعارات والصوت ========================
+    function showNotificationWithSound(title, body, soundType = 'beep') {
+        // تشغيل الصوت أولاً (هام جداً لكبار السن)
+        if (soundType === 'double') playDoubleBeep();
+        else playBeep();
+        
+        // ثم إظهار الإشعار
+        if (Notification.permission === "granted") {
+            new Notification(title, { body: body, icon: "https://cdn-icons-png.flaticon.com/512/3095/3095120.png" });
+        } else {
+            // تنبيه بديل في حالة عدم السماح بالإشعارات
+            alert(`🔔 ${title}\n${body}`);
+        }
+    }
+
+    function checkReminders() {
+        const now = new Date();
+        const currentTime = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        
+        // تذكير الأدوية
+        medicines.forEach(med => {
+            if (med.time && med.time === currentTime) {
+                showNotificationWithSound("⏰ حان وقت الدواء", `تناول ${med.name} - ${med.dose}`, 'beep');
+            }
+        });
+        
+        // تذكير المواعيد الطبية (إذا كان التاريخ اليوم والوقت مطابقاً تقريباً)
+        const today = now.toLocaleDateString('en-CA'); // yyyy-mm-dd
+        appointments.forEach(app => {
+            if (app.date === today) {
+                // إذا كان الموعد اليوم ولم يمر وقته (أو بدون وقت محدد)
+                if (!app.time || app.time === currentTime || currentTime > app.time) {
+                    // نتأكد من عدم التكرار: نستخدم علامة مرسلة
+                    if (!app.notifiedToday) {
+                        app.notifiedToday = true;
+                        showNotificationWithSound("📌 موعد طبي اليوم", `${app.title} الساعة ${app.time || 'غير محدد'}`, 'double');
+                        saveAll(); // حفظ حالة التنبيه
+                    }
+                } else {
+                    // إعادة تعيين العلامة في اليوم التالي
+                    if (app.notifiedToday) delete app.notifiedToday;
+                }
+            } else {
+                if (app.notifiedToday) delete app.notifiedToday;
+            }
+        });
+    }
+    
+    // فحص كل دقيقة
+    setInterval(checkReminders, 60000);
+    setTimeout(checkReminders, 2000); // فحص فوري بعد التحميل
+
+    // ======================== عرض الأدوية ========================
+    function displayMedicines() {
+        const container = document.getElementById('medicinesList');
+        if(medicines.length === 0) { container.innerHTML = '<p>✨ لا توجد أدوية مضافة</p>'; return; }
+        container.innerHTML = medicines.map((med, idx) => `
+            <div class="medicine-item">
+                <strong>💊 ${med.name}</strong> - ${med.dose}<br>
+                ⏰ ${med.time || 'بدون وقت'}
+                <button class="btn-small" onclick="deleteMedicine(${idx})" style="float:left;">🗑️ حذف</button>
+            </div>
+        `).join('');
+    }
+
+    window.addMedicine = function() {
+        let name = prompt("اسم الدواء:");
+        if(!name) return;
+        let dose = prompt("الجرعة (مثال: حبة بعد الأكل):");
+        let time = prompt("وقت التذكير بصيغة 24 ساعة (مثال: 08:00 أو 20:30):");
+        medicines.push({ name, dose, time });
+        saveAll();
+        displayMedicines();
+    };
+    window.deleteMedicine = function(idx) { medicines.splice(idx,1); saveAll(); displayMedicines(); };
+
+    // ======================== المواعيد ========================
+    function displayAppointments() {
+        const container = document.getElementById('appointmentsList');
+        if(appointments.length === 0) { container.innerHTML = '<p>📭 لا توجد مواعيد مسجلة</p>'; return; }
+        container.innerHTML = appointments.map((app, idx) => `
+            <div class="medicine-item">
+                📌 ${app.title} - ${app.date} ${app.time ? 'الساعة '+app.time : ''}
+                <button class="btn-small" onclick="deleteAppointment(${idx})" style="float:left;">🗑️</button>
+            </div>
+        `).join('');
+    }
+    window.addAppointment = function() {
+        let title = prompt("عنوان الموعد (مثال: عيون، قلب):");
+        if(!title) return;
+        let date = prompt("التاريخ (مثال: 2025-06-10):");
+        let time = prompt("الوقت (اختياري، مثل 10:30):");
+        appointments.push({ title, date, time: time || '' });
+        saveAll();
+        displayAppointments();
+    };
+    window.deleteAppointment = function(idx) { appointments.splice(idx,1); saveAll(); displayAppointments(); };
+
+    // ======================== القراءات ========================
+    window.saveReading = function() {
+        let bp = document.getElementById('bp').value.trim();
+        let sugar = document.getElementById('sugar').value.trim();
+        if(!bp && !sugar) { alert("أدخل قراءة واحدة على الأقل"); return; }
+        readings.push({ date: new Date().toLocaleDateString('ar-EG'), bp, sugar });
+        saveAll();
+        displayReadings();
+        document.getElementById('bp').value = '';
+        document.getElementById('sugar').value = '';
+    };
+    function displayReadings() {
+        const container = document.getElementById('readingsHistory');
+        if(readings.length === 0) { container.innerHTML = '<p>📝 سجل قراءاتك اليومية هنا</p>'; return; }
+        container.innerHTML = readings.slice(-6).reverse().map(r => `
+            <div>📆 ${r.date} | ❤️ ضغط: ${r.bp || '---'} | 🩸 سكر: ${r.sugar || '---'}</div>
+        `).join('');
+    }
+
+    // ======================== جهات الاتصال ========================
+    function displayContacts() {
+        const familyDiv = document.getElementById('familyContactsList');
+        const doctorDiv = document.getElementById('doctorContactsList');
+        
+        if(familyContacts.length === 0) familyDiv.innerHTML = '<p>➕ أضف أرقام أفراد العائلة لمشاركة التقارير</p>';
+        else {
+            familyDiv.innerHTML = familyContacts.map((c, idx) => `
+                <div class="contact-item">
+                    <span class="contact-name">👤 ${c.name}</span> - 📞 ${c.phone}
+                    <button onclick="editContact('family', ${idx})" class="btn-small">✏️ تعديل</button>
+                    <button onclick="deleteContact('family', ${idx})" class="btn-small">🗑️</button>
+                </div>
+            `).join('');
+        }
+        
+        if(doctorContacts.length === 0) doctorDiv.innerHTML = '<p>➕ أضف رقم الطبيب المعالج</p>';
+        else {
+            doctorDiv.innerHTML = doctorContacts.map((c, idx) => `
+                <div class="contact-item">
+                    <span class="contact-name">👨‍⚕️ ${c.name}</span> - 📞 ${c.phone}
+                    <button onclick="editContact('doctor', ${idx})" class="btn-small">✏️</button>
+                    <button onclick="deleteContact('doctor', ${idx})" class="btn-small">🗑️</button>
+                </div>
+            `).join('');
+        }
+    }
+
+    window.addContact = function(type) {
+        let name = prompt("الاسم (مثال: أحمد أو د. سمير):");
+        if(!name) return;
+        let phone = prompt("رقم الهاتف (مع مفتاح الدولة، مثال: 966512345678):");
+        if(!phone) return;
+        let contact = { name, phone };
+        if(type === 'family') familyContacts.push(contact);
+        else doctorContacts.push(contact);
+        saveAll();
+        displayContacts();
+    };
+
+    window.editContact = function(type, idx) {
+        let contact = (type === 'family') ? familyContacts[idx] : doctorContacts[idx];
+        let newName = prompt("تعديل الاسم:", contact.name);
+        if(newName) contact.name = newName;
+        let newPhone = prompt("تعديل الرقم:", contact.phone);
+        if(newPhone) contact.phone = newPhone;
+        saveAll();
+        displayContacts();
+    };
+
+    window.deleteContact = function(type, idx) {
+        if(confirm("هل تريد حذف هذا الرقم؟")) {
+            if(type === 'family') familyContacts.splice(idx,1);
+            else doctorContacts.splice(idx,1);
+            saveAll();
+            displayContacts();
+        }
+    };
+
+    // ======================== مشاركة التقارير ========================
+    function generateReportText() {
+        let lastReadings = readings.slice(-5).map(r => `${r.date}: ضغط ${r.bp || '--'} - سكر ${r.sugar || '--'}`).join("\n");
+        let upcomingMeds = medicines.map(m => `${m.name} (${m.dose}) الساعة ${m.time || 'غير محدد'}`).join("\n");
+        let upcomingApps = appointments.map(a => `${a.title} - ${a.date} ${a.time ? a.time : ''}`).join("\n");
+        return `📋 *تقريري الصحي*\n\n🩺 آخر القراءات:\n${lastReadings || "لا توجد قراءات بعد"}\n\n💊 الأدوية:\n${upcomingMeds || "لا توجد"}\n\n📅 المواعيد القادمة:\n${upcomingApps || "لا توجد"}`;
+    }
+
+    function sendToNumber(phone, text) {
+        let whatsappUrl = `https://wa.me/${phone.replace(/\D/g,'')}?text=${encodeURIComponent(text)}`;
+        window.open(whatsappUrl, '_blank');
+    }
+
+    window.shareReportWithFamily = function() {
+        if(familyContacts.length === 0) {
+            alert("لا توجد أرقام للعائلة. أضفها أولاً في الإعدادات.");
+            return;
+        }
+        let report = generateReportText();
+        let familyNames = familyContacts.map((c,i) => `${i+1}- ${c.name} (${c.phone})`).join("\n");
+        let choice = prompt(`اختر رقم العائلة الذي تريد إرسال التقرير إليه:\n${familyNames}\n\nأدخل الرقم (1 ,2 ,3...):`);
+        let idx = parseInt(choice) - 1;
+        if(!isNaN(idx) && familyContacts[idx]) {
+            sendToNumber(familyContacts[idx].phone, report);
+        } else {
+            alert("اختيار غير صحيح");
+        }
+    };
+
+    window.shareReportWithDoctor = function() {
+        if(doctorContacts.length === 0) {
+            alert("لا يوجد رقم طبيب. أضف الطبيب في الإعدادات.");
+            return;
+        }
+        let report = generateReportText();
+        if(doctorContacts.length === 1) {
+            sendToNumber(doctorContacts[0].phone, report);
+        } else {
+            let docList = doctorContacts.map((d,i) => `${i+1}- ${d.name}`).join("\n");
+            let choice = prompt(`لديك أكثر من طبيب:\n${docList}\nاختر الرقم:`);
+            let idx = parseInt(choice)-1;
+            if(doctorContacts[idx]) sendToNumber(doctorContacts[idx].phone, report);
+            else alert("اختيار غير صحيح");
+        }
+    };
+
+    // التحميل الأولي
+    displayMedicines();
+    displayAppointments();
+    displayReadings();
+    displayContacts();
+</script>
+</body>
+</html>
